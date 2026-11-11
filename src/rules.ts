@@ -70,9 +70,19 @@ export interface LiquidExchangeBlock {
     cap_usd: number
     cap_nanos: number
     estimated_usd: number
+    supplier_usd?: number
+    fee_usd?: number
+    credits_usd?: number
+    /** What the buyer pays. It is never more than `cap_usd`. */
     total_usd?: number
+    total_nanos?: number
     [key: string]: unknown
   }
+  usage?: Record<string, unknown>
+  timing?: Record<string, unknown>
+  finish_reason?: string
+  /** Present for a request that sent `x-liquid-explain: true`, and for `getJob`. */
+  routing?: Record<string, unknown>
   [key: string]: unknown
 }
 
