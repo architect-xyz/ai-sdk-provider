@@ -35,4 +35,14 @@ is final only when the status is `settled`.
 
 ## Release
 
-The package is built with `npm run build` and published from `dist/`.
+Each PR that changes behavior adds a changeset:
+
+```bash
+npm run changeset
+```
+
+A merge to `main` makes the release workflow open or update a "Version packages" PR.
+It bumps the version and writes `CHANGELOG.md`. Merging that PR publishes the package to npm,
+with provenance, and tags the release on GitHub. The workflow needs the `NPM_TOKEN` secret.
+
+To publish by hand, run `npm run version`, then `npm run release`.
