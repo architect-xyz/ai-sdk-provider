@@ -9,3 +9,4 @@ export type {
   LiquidExchangeBlock,
   LiquidProviderMetadata,
 } from './rules.js'
+export type { LiquidSpeechOptions, LiquidTranscriptionOptions } from './audio.js'

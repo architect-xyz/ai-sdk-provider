@@ -1,8 +1,14 @@
 import { createOpenAICompatible, type OpenAICompatibleProvider } from '@ai-sdk/openai-compatible'
-import { APICallError, InvalidArgumentError } from '@ai-sdk/provider'
+import {
+  InvalidArgumentError,
+  type SpeechModelV4,
+  type TranscriptionModelV4,
+} from '@ai-sdk/provider'
 import { loadApiKey, withoutTrailingSlash, type FetchFunction } from '@ai-sdk/provider-utils'
 
+import { LiquidSpeechModel, LiquidTranscriptionModel } from './audio.js'
 import { exchangeMetadata } from './metadata.js'
+import { failure, mergeRules, type Transport } from './transport.js'
 import type { ExchangeRules, LiquidExchangeBlock } from './rules.js'
 
 export const DEFAULT_BASE_URL = 'https://router.inference.ai.exchange/v1'
@@ -45,21 +51,16 @@ export type LiquidProvider = OpenAICompatibleProvider<string, string, string, st
    * The receipt can lag the answer by a moment, so a call at once can get a 404.
    */
   getJob(jobId: string, options?: { abortSignal?: AbortSignal }): Promise<LiquidExchangeBlock>
+  /** A speech model. The price is per character, so the cap is the charge. */
+  speechModel(modelId: string): SpeechModelV4
+  /** A transcription model. The price is per second of audio. */
+  transcriptionModel(modelId: string): TranscriptionModelV4
 }
 
 type Plain = Record<string, unknown>
 
 const isPlain = (value: unknown): value is Plain =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-function merge(base: Plain, over: Plain): Plain {
-  const out: Plain = { ...base }
-  for (const [key, value] of Object.entries(over)) {
-    const current = out[key]
-    out[key] = isPlain(current) && isPlain(value) ? merge(current, value) : value
-  }
-  return out
-}
 
 export function createLiquid(settings: LiquidProviderSettings = {}): LiquidProvider {
   const baseURL =
@@ -86,21 +87,24 @@ export function createLiquid(settings: LiquidProviderSettings = {}): LiquidProvi
 
   const defaults = settings.exchange
 
+  const headers = {
+    ...(capUsd === null ? {} : { 'x-liquid-cap-usd': String(capUsd) }),
+    ...(settings.explain ? { 'x-liquid-explain': 'true' } : {}),
+    ...settings.headers,
+  }
+  const transport: Transport = { baseURL, headers, fetch: authorized, exchange: defaults }
+
   const base = createOpenAICompatible({
     name: 'liquid',
     baseURL,
-    headers: {
-      ...(capUsd === null ? {} : { 'x-liquid-cap-usd': String(capUsd) }),
-      ...(settings.explain ? { 'x-liquid-explain': 'true' } : {}),
-      ...settings.headers,
-    },
+    headers,
     fetch: authorized,
     includeUsage: settings.includeUsage ?? true,
     metadataExtractor: exchangeMetadata,
     transformRequestBody: defaults
       ? (body) => ({
           ...body,
-          exchange: merge(defaults as Plain, isPlain(body.exchange) ? body.exchange : {}),
+          exchange: mergeRules(defaults, isPlain(body.exchange) ? body.exchange : undefined),
         })
       : undefined,
   })
@@ -112,30 +116,15 @@ export function createLiquid(settings: LiquidProviderSettings = {}): LiquidProvi
       headers: settings.headers,
       signal: abortSignal,
     })
-    const bodyText = await response.text()
-    let data: unknown
-    try {
-      data = JSON.parse(bodyText)
-    } catch {
-      data = undefined
-    }
-    if (!response.ok) {
-      throw new APICallError({
-        message: `Liquid request failed with status ${response.status}`,
-        url,
-        requestBodyValues: {},
-        statusCode: response.status,
-        responseBody: bodyText,
-        data,
-        isRetryable: response.status === 429 || response.status >= 500,
-      })
-    }
-    return data as T
+    if (!response.ok) throw await failure(response, url, {})
+    return (await response.json()) as T
   }
 
   return Object.assign(base, {
     listModels: async (options?: { abortSignal?: AbortSignal }) =>
       (await get<{ data: LiquidModel[] }>('/models', options?.abortSignal)).data,
+    speechModel: (modelId: string) => new LiquidSpeechModel(modelId, transport),
+    transcriptionModel: (modelId: string) => new LiquidTranscriptionModel(modelId, transport),
     getJob: (jobId: string, options?: { abortSignal?: AbortSignal }) =>
       get<LiquidExchangeBlock>(`/jobs/${encodeURIComponent(jobId)}`, options?.abortSignal),
   })

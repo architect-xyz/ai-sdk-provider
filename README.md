@@ -54,6 +54,35 @@ const job = await liquid.getJob('job_...') // GET /v1/jobs/{id}, with routing de
 - `explain: true` sends `x-liquid-explain` so that each response has the routing detail.
 - A `capUsd` that is not a positive number throws when the provider is made.
 
+## Speech and transcription
+
+```typescript
+import {
+  experimental_generateSpeech as generateSpeech,
+  experimental_transcribe as transcribe,
+} from 'ai'
+
+const speech = await generateSpeech({
+  model: liquid.speechModel('tts-model'),
+  text: 'Hello',
+  voice: 'alloy',
+  providerOptions: { liquid: { exchange: { cap_usd: 0.01 } } },
+})
+
+const transcript = await transcribe({
+  model: liquid.transcriptionModel('stt-model'),
+  audio: await readFile('talk.mp3'),
+  providerOptions: { liquid: { diarize: true, keyterms: ['Liquid'] } },
+})
+```
+
+- Speech is priced per character, and transcription per second of audio. Only a deployment
+  registered for that kind can win, so a chat model name is refused.
+- Both put the receipt summary in `providerMetadata.liquid.exchange`. Speech reads it from the
+  `x-liquid-exchange` header, because the body is audio.
+- The speech route has no `language` field, so a `language` option gives a warning.
+- Transcription asks for `verbose_json`, so a result has segments, words and the duration.
+
 ## Metadata
 
 `providerMetadata.liquid.exchange` holds the `exchange` block of the response:
