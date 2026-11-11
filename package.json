@@ -36,7 +36,7 @@
     "@ai-sdk/provider-utils": "^5.0.0"
   },
   "devDependencies": {
-    "@ai-sdk/provider": "4.0.37",
+    "@ai-sdk/provider": "^4.0.37",
     "@ai-sdk/provider-utils": "5.0.79",
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",

@@ -27,6 +27,33 @@ console.log(result.providerMetadata?.liquid?.exchange.job_id)
 A call sets rules with `providerOptions: { liquid: { exchange: { ... } } }`.
 The fields are in the Purchasing rules guide.
 
+## Helpers
+
+```typescript
+import { getChargeUsd, getExchange, getLiquidError, liquidOptions } from '@liquid/ai-sdk-provider'
+
+try {
+  const result = await generateText({
+    model: liquid('liquid.auto'),
+    prompt: 'Say hello.',
+    providerOptions: liquidOptions({ exchange: { cap_usd: 0.05 } }),
+  })
+  console.log(getChargeUsd(result), getExchange(result)?.provider_slug)
+} catch (error) {
+  console.log(getLiquidError(error)) // { status, code, param, message }
+}
+
+const models = await liquid.listModels() // GET /v1/models
+const job = await liquid.getJob('job_...') // GET /v1/jobs/{id}, with routing detail
+```
+
+- `liquidOptions` types the `providerOptions` of a call.
+- `getExchange` and `getChargeUsd` read the receipt summary from a result or a step.
+  `getChargeUsd` returns `undefined` until the job is settled.
+- `getLiquidError` returns the `code` and `param` of a refusal, such as an offer that exceeds the cap.
+- `explain: true` sends `x-liquid-explain` so that each response has the routing detail.
+- A `capUsd` that is not a positive number throws when the provider is made.
+
 ## Metadata
 
 `providerMetadata.liquid.exchange` holds the `exchange` block of the response:
