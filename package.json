@@ -24,7 +24,9 @@
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "npm run build"
+    "changeset": "changeset",
+    "version": "changeset version && npm install --package-lock-only",
+    "release": "npm run build && changeset publish"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "3.0.78"
@@ -36,6 +38,8 @@
   "devDependencies": {
     "@ai-sdk/provider": "4.0.37",
     "@ai-sdk/provider-utils": "5.0.79",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
     "@types/node": "^22.20.2",
     "ai": "7.0.153",
     "prettier": "^3.9.6",
@@ -45,5 +49,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/architect-xyz/ai-sdk-provider.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
