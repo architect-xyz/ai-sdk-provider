@@ -1,0 +1,49 @@
+{
+  "name": "@liquid/ai-sdk-provider",
+  "version": "0.1.0",
+  "description": "Liquid Inference provider for the Vercel AI SDK",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.78"
+  },
+  "peerDependencies": {
+    "@ai-sdk/provider": "^4.0.0",
+    "@ai-sdk/provider-utils": "^5.0.0"
+  },
+  "devDependencies": {
+    "@ai-sdk/provider": "4.0.37",
+    "@ai-sdk/provider-utils": "5.0.79",
+    "@types/node": "^22.20.2",
+    "ai": "7.0.153",
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/architect-xyz/ai-sdk-provider.git"
+  }
+}
